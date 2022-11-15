@@ -22,7 +22,7 @@ export class ProductsService {
     private readonly productImageRepository: Repository<ProductImage>,
     private readonly dataSource: DataSource,
   ) {}
-  async create(createProductDto: CreateProductDto) {
+  public async create(createProductDto: CreateProductDto) {
     try {
       const { images = [], ...productDetails } = createProductDto;
       const product = this.productRepository.create({
@@ -38,7 +38,7 @@ export class ProductsService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  public async findAll(paginationDto: PaginationDto) {
     const { limit = 10, offset = 0 } = paginationDto;
     try {
       const products = await this.productRepository.find({
@@ -57,7 +57,7 @@ export class ProductsService {
     }
   }
 
-  async findOne(termino: string): Promise<Product> {
+  public async findOne(termino: string): Promise<Product> {
     let product: Product;
     if (isUUID(termino)) {
       product = await this.productRepository.findOneBy({ id: termino });
@@ -79,7 +79,7 @@ export class ProductsService {
     const { images, ...productDetails } = await this.findOne(termino);
     return { ...productDetails, images: images.map((image) => image.url) };
   }
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  public async update(id: string, updateProductDto: UpdateProductDto) {
     const { images, ...productUpdateDetails } = updateProductDto;
     const product = await this.productRepository.preload({
       id,
@@ -108,11 +108,11 @@ export class ProductsService {
       this.handleDBExceptions(error);
     }
   }
-  async remove(id: string): Promise<void> {
+  public async remove(id: string): Promise<void> {
     const product = await this.findOne(id);
     await this.productRepository.remove(product);
   }
-  async deleteAllProducts(): Promise<DeleteResult> {
+  public async deleteAllProducts(): Promise<DeleteResult> {
     const query = this.productRepository.createQueryBuilder('product');
     try {
       return await query.delete().where({}).execute();
