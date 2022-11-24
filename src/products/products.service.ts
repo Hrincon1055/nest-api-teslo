@@ -12,6 +12,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
 import { ProductImage, Product } from './entities';
+import { User } from '../auth/entities/user.entity';
+
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger('ProductsService');
@@ -22,7 +24,7 @@ export class ProductsService {
     private readonly productImageRepository: Repository<ProductImage>,
     private readonly dataSource: DataSource,
   ) {}
-  public async create(createProductDto: CreateProductDto) {
+  public async create(createProductDto: CreateProductDto, user: User) {
     try {
       const { images = [], ...productDetails } = createProductDto;
       const product = this.productRepository.create({
@@ -30,6 +32,7 @@ export class ProductsService {
         images: images.map((image) =>
           this.productImageRepository.create({ url: image }),
         ),
+        user,
       });
       await this.productRepository.save(product);
       return { ...product, images: images };
@@ -79,12 +82,17 @@ export class ProductsService {
     const { images, ...productDetails } = await this.findOne(termino);
     return { ...productDetails, images: images.map((image) => image.url) };
   }
-  public async update(id: string, updateProductDto: UpdateProductDto) {
+  public async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    user: User,
+  ) {
     const { images, ...productUpdateDetails } = updateProductDto;
     const product = await this.productRepository.preload({
       id,
       ...productUpdateDetails,
     });
+
     if (!product)
       throw new NotFoundException(`Product whit id ${id} not found.`);
     // create query runner
@@ -97,8 +105,8 @@ export class ProductsService {
         product.images = images.map((image) =>
           this.productImageRepository.create({ url: image }),
         );
-      } else {
       }
+      product.user = user;
       await queryRunner.manager.save(product);
       await queryRunner.commitTransaction();
       await queryRunner.release();
